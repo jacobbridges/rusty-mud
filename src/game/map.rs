@@ -133,7 +133,7 @@ impl<'a> Room {
         final_str
     }
 
-    pub fn description(&mut self, entities: &EntitiesRes, inrooms: &mut WriteStorage<components::InRoom>, ds: &ReadStorage<components::Description>) -> String {
+    pub fn description(&self, entities: &EntitiesRes, inrooms: &mut WriteStorage<components::InRoom>, ds: &ReadStorage<components::Description>) -> String {
         let mut obj_glances: Vec<&str> = Vec::new();
         for (e, inroom) in (entities, inrooms).join() {
             if inroom.room == self.id {
@@ -177,7 +177,11 @@ impl Map {
         self.spawn.expect("No spawn point set for map!")
     }
 
-    pub fn room(&mut self, room_id: &RoomId) -> &mut Room {
+    pub fn room_mut(&mut self, room_id: &RoomId) -> &mut Room {
         self.rooms.get_mut(room_id).unwrap()
+    }
+
+    pub fn room(&self, room_id: &RoomId) -> &Room {
+        self.rooms.get(room_id).unwrap()
     }
 }

@@ -39,4 +39,6 @@ pub struct Player;
 
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
-pub struct Name;
+pub struct ApplyMove {
+    pub room: map::RoomId,
+}

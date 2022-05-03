@@ -1,30 +1,38 @@
 mod components;
 mod systems;
 mod map;
+mod player;
 
 use specs::{World, WorldExt, Builder};
 use specs::world::Index as EntityId;
 use specs;
 
 
-#[derive(Clone, Debug)]
-pub struct PlayerInput {
-    player_id: EntityId,
-    input: String,
+#[derive(PartialEq, Copy, Clone)]
+pub enum RunState {
+    AwaitingInput,
+    PreRun,
+    PlayerTurn,
+    NpcTurn,
 }
 
 pub struct Game<'a, 'b> {
     world: World,
     dispatcher: specs::Dispatcher<'a, 'b>,
+    player_id: EntityId,
 }
 
 impl Game<'_, '_> {
+    /// Create a new game object.
     pub fn new<'a, 'b>() -> Game<'a, 'b> {
         let mut world = World::new();
         let mut dispatcher = specs::DispatcherBuilder::new()
-            .with(systems::PlayerInputSystem, "player_input", &[])
+            .with(systems::MovementSystem, "movement", &[])
             .build();
 
+        world.register::<components::Player>();
+        world.register::<components::Description>();
+        world.register::<components::InRoom>();
         dispatcher.setup(&mut world);
 
         let world_map = Game::build_map();
@@ -54,19 +62,28 @@ impl Game<'_, '_> {
             .with(components::InRoom { room: world_map.spawn() })
             .build();
 
+        let player = world.create_entity()
+            .with(components::Player{})
+            .with(components::InRoom { room: world_map.spawn() })
+            .build();
+
         world.insert(world_map);
+        world.insert(RunState::PreRun);
 
         Game {
             world,
             dispatcher,
+            player_id: player.id(),
         }
     }
 
+    /// Get the world spawn point.
     fn spawn(&self) -> map::RoomId {
         let world_map: &map::Map = &*self.world.fetch::<map::Map>();
         world_map.spawn()
     }
 
+    /// Build the default map.
     pub fn build_map() -> map::Map {
         let mut map = map::Map::new();
         let mut first_room = map.create_room("This is the first room");
@@ -83,13 +100,46 @@ impl Game<'_, '_> {
         map
     }
 
+    /// Game tick
     pub fn tick(&mut self) {
-        println!("=============== before tick ===============");
-        self.dispatcher.dispatch(&self.world);
-        self.world.maintain();
-        println!("=============== after tick ===============");
+        let mut newrunstate: RunState;
+        {
+            let runstate = self.world.fetch::<RunState>();
+            newrunstate = *runstate;
+        }
+
+        match newrunstate {
+            RunState::PreRun => {
+                println!("=============== prerun tick ===============");
+                self.dispatcher.dispatch(&self.world);
+                self.world.maintain();
+                newrunstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                println!("=============== input  tick ===============");
+                newrunstate = player::handle_player_input(self);
+            }
+            RunState::PlayerTurn => {
+                println!("=============== player tick ===============");
+                self.dispatcher.dispatch(&self.world);
+                self.world.maintain();
+                newrunstate = RunState::NpcTurn;
+            }
+            RunState::NpcTurn => {
+                println!("=============== NPC    tick ===============");
+                self.dispatcher.dispatch(&self.world);
+                self.world.maintain();
+                newrunstate = RunState::AwaitingInput;
+            }
+        }
+
+        {
+            let mut runwriter = self.world.write_resource::<RunState>();
+            *runwriter = newrunstate;
+        }
     }
 
+    /// Create a player entity, inject into the world, and return the player entity id.
     pub fn create_player(&mut self) -> EntityId {
         let spawn: map::RoomId;
         {
@@ -104,15 +154,16 @@ impl Game<'_, '_> {
         player.id()
     }
 
+    /// Collect player input and inject into the ECS
     pub fn player_input(&mut self, player_id: EntityId, input: &str) {
-        let p: PlayerInput = PlayerInput {
+        let p: player::PlayerInput = player::PlayerInput {
             player_id,
             input: input.into(),
         };
 
-        let mut list: Vec<PlayerInput>;
+        let mut list: Vec<player::PlayerInput>;
         {
-            match self.world.try_fetch::<Vec<PlayerInput>>() {
+            match self.world.try_fetch::<Vec<player::PlayerInput>>() {
                 Some(l) => list = (*l).clone(),
                 None => list = Vec::new(),
             }
