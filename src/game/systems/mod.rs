@@ -1,7 +1,3 @@
-mod player;
+mod player_input;
 
-pub use player::PlayerSystem;
-
-
-
-
+pub use player_input::PlayerInputSystem;

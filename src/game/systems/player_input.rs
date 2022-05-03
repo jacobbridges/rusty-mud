@@ -1,6 +1,6 @@
-use specs::{Entities, ReadStorage, WriteStorage, Write, System, Entity, WorldExt, Join, Read};
+use specs::prelude::*;
 use crate::game::components::{InRoom, Description, Player};
-use crate::game::map::{Map, Room, Gate, ExitDirection};
+use crate::game::map::{Map, Room, ExitDirection};
 use crate::game::PlayerInput;
 
 
@@ -57,9 +57,9 @@ fn get_enum_for_input_string(input: &str) -> Input {
     }
 }
 
-pub struct PlayerSystem;
+pub struct PlayerInputSystem;
 
-impl<'a> PlayerSystem {
+impl<'a> PlayerInputSystem {
     fn handle_player_input(&mut self, player_input: PlayerInput, map: &mut Map, entity_storage: &Entities<'a>, in_room_storage: &mut WriteStorage<'a, InRoom>, description_storage: &ReadStorage<'a, Description>) {
         let input = get_enum_for_input_string(&player_input.input.as_str());
         let player_ent = entity_storage.entity(player_input.player_id.clone());
@@ -107,7 +107,7 @@ impl<'a> PlayerSystem {
                 }
             },
             Input::Look => {
-                let mut in_room_comp = in_room_storage.get_mut(player_ent).unwrap();
+                let in_room_comp = in_room_storage.get_mut(player_ent).unwrap();
                 let room: &mut Room = map.room(&in_room_comp.room);
                 println!("{}", room.description(
                     entity_storage,
@@ -147,7 +147,7 @@ impl<'a> PlayerSystem {
     }
 }
 
-impl<'a> System<'a> for PlayerSystem {
+impl<'a> System<'a> for PlayerInputSystem {
     type SystemData = (
         Entities<'a>,
         Option<Write<'a, Vec<PlayerInput>>>,

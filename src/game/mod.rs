@@ -2,13 +2,9 @@ mod components;
 mod systems;
 mod map;
 
-use std::collections::BTreeMap;
-use serenity::model::gateway::ActivityType::Playing;
-use specs::prelude::*;
 use specs::{World, WorldExt, Builder};
 use specs::world::Index as EntityId;
 use specs;
-use specs::shred::FetchMut;
 
 
 #[derive(Clone, Debug)]
@@ -26,43 +22,10 @@ impl Game<'_, '_> {
     pub fn new<'a, 'b>() -> Game<'a, 'b> {
         let mut world = World::new();
         let mut dispatcher = specs::DispatcherBuilder::new()
-            // .with(systems::RoomSystem, "room", &[])
-            // .with(systems::RoomDescriptionSystem, "room_description", &[])
-            .with(systems::PlayerSystem, "player", &[])
+            .with(systems::PlayerInputSystem, "player_input", &[])
             .build();
 
         dispatcher.setup(&mut world);
-
-        // let mut rooms: Vec<Entity> = Vec::new();
-        // for _ in 0..20 {
-        //     rooms.push(
-        //         world.create_entity()
-        //             .with(components::Room::new(None, None))
-        //             .with(components::Description {
-        //                 description: "The interior of the traincar smelled musty, like unwashed \
-        //                 damp rags. Along the left wall were metal cabinets. Along the right wall \
-        //                 were windows, dark glass framing the void outside the train.".to_string(),
-        //                 glance: "".to_string(),
-        //                 name: None,
-        //             })
-        //             .build()
-        //     )
-        // }
-
-        // {  // Create separate block so room_storage goes out of scope
-        //     let mut room_storage = world.write_storage::<components::Room>();
-        //     for i in 0..20 {
-        //         let room: &mut components::Room = room_storage.get_mut(rooms[i]).unwrap();
-        //
-        //         if i > 0 {
-        //             room.set_previous_room(&rooms[i - 1]);
-        //         }
-        //
-        //         if i < 19 {
-        //             room.set_next_room(&rooms[i + 1]);
-        //         }
-        //     }
-        // }
 
         let world_map = Game::build_map();
 
@@ -128,7 +91,7 @@ impl Game<'_, '_> {
     }
 
     pub fn create_player(&mut self) -> EntityId {
-        let mut spawn: map::RoomId;
+        let spawn: map::RoomId;
         {
             spawn = self.spawn()
         }
@@ -157,18 +120,5 @@ impl Game<'_, '_> {
 
         list.push(p);
         self.world.insert(list);
-
-        // match self.world.try_fetch() {
-        //     Some(l) => {
-        //         let mut list: Vec<PlayerInput> = *l.clone();
-        //         list.push(p);
-        //         self.world.insert(list);
-        //     }
-        //     None => {
-        //         let mut l = Vec::new();
-        //         l.push(p);
-        //         self.world.insert(l);
-        //     }
-        // }
     }
 }

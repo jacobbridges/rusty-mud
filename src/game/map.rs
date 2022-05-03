@@ -94,8 +94,8 @@ impl<'a> Room {
     }
 
     fn generate_room_description(&self, glances: &Vec<&str>) -> String {
-        let mut final_str = "".to_string();
-        let mut desc = self.description.clone();
+        let mut final_str;
+        let desc = self.description.clone();
         let mut split = desc.split("===");
         final_str = split.next().unwrap().trim().to_string();
         let mut obj_strings = glances.iter()
@@ -134,7 +134,6 @@ impl<'a> Room {
     }
 
     pub fn description(&mut self, entities: &EntitiesRes, inrooms: &mut WriteStorage<components::InRoom>, ds: &ReadStorage<components::Description>) -> String {
-        use specs::Join;
         let mut obj_glances: Vec<&str> = Vec::new();
         for (e, inroom) in (entities, inrooms).join() {
             if inroom.room == self.id {

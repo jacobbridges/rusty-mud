@@ -1,7 +1,7 @@
 // mod room;
 
 use std::string::String;
-use specs::{Component, Entity, VecStorage};
+use specs::{Component, VecStorage};
 use crate::game::map;
 // pub use room::Room;
 
