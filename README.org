@@ -1,0 +1,46 @@
+#+TITLE: README
+#+AUTHOR: github.com/jacobbridges
+#+STARTUP: indent
+
+* What is this?
+
+Right now, this is a mess.
+
+The end goal is something like a MUD engine for Discord. Althought I
+suspect the project will go stale around the time I get a demo
+running..
+
+* How to run this?
+
+Right now there's not much. A quick ~cargo run~ will start the game
+loop and ask accept user input from the console. Nothing has been
+linked up to Discord yet, or networking in general. See my TODO list
+later in this document.
+
+* TODOS
+
+** TODO Networking [0/4]
+- [ ] Communication for a game is dedicated to a channel.
+- [ ] Input is received from channel.
+- [ ] Output is written to channel.
+- [ ] Player is associated to channel.
+** TODO Combat [0/6]
+- [ ] Entities which can be targeted for damage
+- [ ] Component to track entity health
+- [ ] Game states (see [[https://github.com/amethyst/rustrogueliketutorial/blob/d6a4673ca59cffe057d4b0015b4920ecd5faa3b6/chapter-09-items/src/main.rs#L61-L139][this example in github]])
+- [ ] Combat stats component
+  - Base attack power / base defense
+- [ ] Damage mitigation system
+- [ ] Speed / initiative system
+** TODO Inventory [0/0]
+** TODO Equipment [0/0]
+** TODO Menus [0/0]
+** TODO Player Customization [0/0]
+
+* Ideas
+
+- Each player can battle through the Story Train via DM with the bot,
+  but when they reach Story Lord they unlock the boss battle room in
+  the Discord server where they get to fight Story Lord alongside any
+  other players who have made it to the final boss.
+

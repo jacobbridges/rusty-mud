@@ -1,0 +1,17 @@
+[package]
+name = "rusty-mud"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.16"
+specs = { version = "0.16.1", features = ["specs-derive"] }
+text_io = "0.1.10"
+regex = "1.5.5"
+
+
+[dependencies.serenity]
+version = "0.11.1"
+features = ["client", "gateway", "rustls_backend", "model"]
