@@ -24,10 +24,10 @@ later in this document.
 - [ ] Input is received from channel.
 - [ ] Output is written to channel.
 - [ ] Player is associated to channel.
-** TODO Combat [0/6]
+** TODO Combat [1/6]
 - [ ] Entities which can be targeted for damage
 - [ ] Component to track entity health
-- [ ] Game states (see [[https://github.com/amethyst/rustrogueliketutorial/blob/d6a4673ca59cffe057d4b0015b4920ecd5faa3b6/chapter-09-items/src/main.rs#L61-L139][this example in github]])
+- [X] Game states (see [[https://github.com/amethyst/rustrogueliketutorial/blob/d6a4673ca59cffe057d4b0015b4920ecd5faa3b6/chapter-09-items/src/main.rs#L61-L139][this example in github]])
 - [ ] Combat stats component
   - Base attack power / base defense
 - [ ] Damage mitigation system
