@@ -1,5 +1,6 @@
 pub mod cogs;
 pub mod game;
+pub mod utils;
 
 
 fn main() {

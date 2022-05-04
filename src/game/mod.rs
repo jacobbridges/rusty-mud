@@ -28,11 +28,13 @@ impl Game<'_, '_> {
         let mut world = World::new();
         let mut dispatcher = specs::DispatcherBuilder::new()
             .with(systems::MovementSystem, "movement", &[])
+            .with(systems::InventorySystem, "inventory", &[])
             .build();
 
+        // Any components not mentioned in systems must be manually mentioned here
         world.register::<components::Player>();
-        world.register::<components::Description>();
-        world.register::<components::InRoom>();
+        world.register::<components::Item>();
+
         dispatcher.setup(&mut world);
 
         let world_map = Game::build_map();
@@ -52,6 +54,7 @@ impl Game<'_, '_> {
                 name: None,
             })
             .with(components::InRoom { room: world_map.spawn() })
+            .with(components::Storage::new())
             .build();
         world.create_entity()
             .with(components::Description {
@@ -60,11 +63,13 @@ impl Game<'_, '_> {
                 name: None,
             })
             .with(components::InRoom { room: world_map.spawn() })
+            .with(components::Item{})
             .build();
 
         let player = world.create_entity()
             .with(components::Player{})
             .with(components::InRoom { room: world_map.spawn() })
+            .with(components::Storage::new())
             .build();
 
         world.insert(world_map);

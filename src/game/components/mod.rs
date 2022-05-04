@@ -1,9 +1,10 @@
-// mod room;
+mod storage;
 
 use std::string::String;
-use specs::{Component, VecStorage};
+use specs::{Component, VecStorage, Entity};
 use crate::game::map;
-// pub use room::Room;
+
+pub use storage::Storage;
 
 
 #[derive(Component, Debug)]
@@ -41,4 +42,15 @@ pub struct Player;
 #[storage(VecStorage)]
 pub struct ApplyMove {
     pub room: map::RoomId,
+}
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct Item;
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct ApplyInventoryChange {
+    pub from_container: Option<Entity>,
+    pub to_container: Option<Entity>,
 }

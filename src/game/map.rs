@@ -2,6 +2,7 @@ use specs::prelude::*;
 use std::collections::{BTreeMap, HashMap};
 use specs::world::EntitiesRes;
 use crate::game::components;
+use crate::utils;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExitDirection {
@@ -99,15 +100,7 @@ impl<'a> Room {
         let mut split = desc.split("===");
         final_str = split.next().unwrap().trim().to_string();
         let mut obj_strings = glances.iter()
-            .map(|glance| {
-                match glance.chars().next() {
-                    Some(c) => match c {
-                        'a' | 'e' | 'i' | 'o' | 'u' => format!("an {}", glance).to_string(),
-                        _ => format!("a {}", glance).to_string(),
-                    },
-                    None => "".to_string(),
-                }
-            })
+            .map(|glance| { utils::aan(*glance) })
             .collect::<Vec<String>>();
         obj_strings.retain(|x| x.len() > 0);
 
@@ -117,7 +110,9 @@ impl<'a> Room {
 
         for i in 0..obj_strings.len() {
             if i == (obj_strings.len() - 1) {
-                if i != 0 {
+                if i == 1 {
+                    final_str = format!("{} and ", &final_str);
+                } else if i > 1 {
                     final_str = format!("{}, and ", &final_str);
                 }
             } else if i > 0 {

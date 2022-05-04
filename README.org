@@ -32,7 +32,21 @@ later in this document.
   - Base attack power / base defense
 - [ ] Damage mitigation system
 - [ ] Speed / initiative system
-** TODO Inventory [0/0]
+** TODO Inventory [8/10]
+- [X] Define an item with components
+  - [X] Can be stored in a container
+  - [X] Can be looked at
+  - [X] Can be dropped
+- [X] Use the inventory system for moving items between storage
+  components
+- [X] Player input for picking up an item
+- [X] Player input for storing an item in a container
+- [X] Player input for listing items carried
+- [X] Player input for listing items in a container
+- [X] Player input for dropping items on the ground
+- [X] Store entity references on container
+- [ ] Player input to attempt to use item
+- [ ] Player input to attempt to use item /on something/
 ** TODO Equipment [0/0]
 ** TODO Menus [0/0]
 ** TODO Player Customization [0/0]
@@ -43,4 +57,9 @@ later in this document.
   but when they reach Story Lord they unlock the boss battle room in
   the Discord server where they get to fight Story Lord alongside any
   other players who have made it to the final boss.
+- Each player begins with only one class option. Something basic like
+  warrior. More class options are unlocked by events during
+  gameplay. For example, killing an assassin would unlock the assassin
+  class. Or killing a wizard, picking up his spellbook, and attempting
+  to read it would unlock the wizard class.
 
