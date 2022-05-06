@@ -2,7 +2,9 @@ mod components;
 mod systems;
 mod map;
 mod player;
+mod manual_map;
 
+use std::collections::BTreeMap;
 use specs::{World, WorldExt, Builder};
 use specs::world::Index as EntityId;
 use specs;

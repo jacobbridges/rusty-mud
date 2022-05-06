@@ -1,4 +1,5 @@
 mod storage;
+pub mod helpers;
 
 use std::string::String;
 use specs::{Component, VecStorage, Entity};
@@ -37,6 +38,10 @@ pub struct InRoom {
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct Player;
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct Npc;
 
 #[derive(Component, Debug)]
 #[storage(VecStorage)]

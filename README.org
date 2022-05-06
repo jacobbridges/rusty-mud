@@ -24,7 +24,24 @@ later in this document.
 - [ ] Input is received from channel.
 - [ ] Output is written to channel.
 - [ ] Player is associated to channel.
-** TODO Combat [1/6]
+** TODO NPCs [0/3]
+- [ ] An NPC should have storage, but the storage is not accessible to
+  the player.
+  - Pickpocketing is a good idea, maybe tackle that as part of the
+    assassin / rogue class.
+  - Whatever items are in the NPCs storage should be merged with the
+    corpse inventory on death.
+- [ ] NPCs should be able to perform actions.
+  - Game RunState for NPCs
+  - Random actions to make the room feel alive
+    - Example 1: "A robot pirate drunkenly sings a binary tune.."
+    - Example 2: "A monkey opens a cabinet and looks inside"
+- [ ] Player should be able to speak to NPCs
+  - Keyword should follow the format: "{keyword} {target}, {message}"
+    - e.g. "tell monkey, go away!"
+  - Certain phrases should universally trigger a response
+    - e.g. hi, hello, hey, etc
+** TODO Combat [1/8]
 - [ ] Entities which can be targeted for damage
 - [ ] Component to track entity health
 - [X] Game states (see [[https://github.com/amethyst/rustrogueliketutorial/blob/d6a4673ca59cffe057d4b0015b4920ecd5faa3b6/chapter-09-items/src/main.rs#L61-L139][this example in github]])
@@ -32,7 +49,13 @@ later in this document.
   - Base attack power / base defense
 - [ ] Damage mitigation system
 - [ ] Speed / initiative system
-** TODO Inventory [8/10]
+- [ ] Loot tables
+  - Loot should match the difficulty of the downed foe
+- [ ] Enemies generate corpses on death
+  - Corpses should be "remove-only" storage containers
+  - Items in the corpse container should be randomly selected from a
+    loot table given the monster difficulty.
+** TODO Inventory [8/11]
 - [X] Define an item with components
   - [X] Can be stored in a container
   - [X] Can be looked at
@@ -47,6 +70,8 @@ later in this document.
 - [X] Store entity references on container
 - [ ] Player input to attempt to use item
 - [ ] Player input to attempt to use item /on something/
+- [ ] Remove-only flag on storage component
+  - Should only allow items to be removed, not put in
 ** TODO Equipment [0/0]
 ** TODO Menus [0/0]
 ** TODO Player Customization [0/0]

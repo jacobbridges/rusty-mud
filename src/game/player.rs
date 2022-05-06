@@ -3,6 +3,11 @@ use specs::world::Index as EntityId;
 
 use crate::game::{Game, RunState};
 use crate::game::components;
+use crate::game::components::helpers::{
+    get_entity_room_id,
+    get_room_entities_as_bitset,
+    get_entities_in_storage_as_bitset,
+};
 use crate::game::map::{ExitDirection, Map, Room, RoomId};
 use crate::utils;
 
@@ -103,7 +108,8 @@ fn get_enum_for_input_string(input: &str) -> Input {
 pub fn handle_player_input(game: &mut Game) -> RunState {
     use text_io::read;
 
-    let player = game.world.entities().entity(game.player_id);
+    let entities = game.world.entities();
+    let player = entities.entity(game.player_id);
 
     println!("Please input a command");
     let input: String = read!("{}\n");
@@ -153,7 +159,7 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             let descriptions = game.world.read_storage::<components::Description>();
             let room: &Room = map.room(&inroom.room);
             println!("{}", room.description(
-                &game.world.entities(),
+                &entities,
                 &mut inrooms,
                 &descriptions,
             ));
@@ -161,20 +167,15 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             return RunState::AwaitingInput
         }
         Input::LookAt(x) => {
-            let mut lookables: Vec<Entity> = Vec::new();
-            lookables.extend(get_entities_in_room(
-                get_player_room_id(&player, &game.world),
-                &game.world,
-            ));
-            lookables.extend(get_entities_from_entity_inventory(&player, &game.world));
-
-            let mut bitset = BitSet::new();
-            for entity in lookables {
-                bitset.add(entity.id());
-            }
+            let room_id = get_entity_room_id(player, &game.world)
+                .expect("Expected player to be in a room!");
+            let room_entities = get_room_entities_as_bitset(room_id, &game.world);
+            let player_inventory_entities = get_entities_in_storage_as_bitset(player, &game.world)
+                .expect("Expected player to have an inventory!");
+            let lookables = room_entities | player_inventory_entities;
 
             let mut target: Option<String> = None;
-            for (_, desc) in (&bitset, &game.world.read_storage::<components::Description>()).join() {
+            for (_, desc) in (&lookables, &game.world.read_storage::<components::Description>()).join() {
                 if desc.glance.starts_with(x.as_str()) {
                     target = Some(desc.description.clone());
                     break;
@@ -191,26 +192,18 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
         Input::LookIn(x) => {
             let storages = game.world.read_storage::<components::Storage>();
             let ds = game.world.read_storage::<components::Description>();
-            let room_id = get_player_room_id(&player, &game.world);
-            let entities_in_room = get_entities_in_room(room_id, &game.world);
+            let room_id = get_entity_room_id(player, &game.world)
+                .expect("Expected player to be in a room");
+            let room_entities = get_room_entities_as_bitset(room_id, &game.world);
             let mut target: Option<Entity> = None;
-            for entity in entities_in_room {
-                let desc_opt = ds.get(entity);
-                let store_opt = storages.get(entity);
-                match (desc_opt, store_opt) {
-                    (Some(desc), Some(_store)) => {
-                        if desc.glance.starts_with(x.as_str()) {
-                            target = Some(entity);
-                            break;
-                        }
-                    },
-                    (Some(desc), None) => {
-                        if desc.glance.starts_with(x.as_str()) {
-                            println!("You can't store items in that!");
-                            return RunState::PlayerTurn
-                        }
+            for (e, d, s, _) in (&entities, &ds, (&storages).maybe(), &room_entities).join() {
+                if d.glance.starts_with(x.as_str()) {
+                    if s.is_some() {
+                        target = Some(e);
+                    } else {
+                        println!("You can't store items in {}!", d.glance);
+                        return RunState::PlayerTurn
                     }
-                    (None, _) => {}
                 }
             }
 
@@ -232,7 +225,6 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             }
         }
         Input::Get(x) => {
-            let entities = game.world.entities();
             let items = game.world.read_storage::<components::Item>();
             let inrooms = game.world.write_storage::<components::InRoom>();
             let player_inroom = inrooms.get(player).unwrap();
@@ -257,24 +249,21 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             }
         }
         Input::GetFrom(item_name, container_name) => {
-            let ds = game.world.read_storage::<components::Description>();
-
-            let room_id = get_player_room_id(&player, &game.world);
-            let room_items = get_entities_in_room(room_id, &game.world);
+            let room_id = get_entity_room_id(player, &game.world)
+                .expect("Expect player to be in a room");
             let mut target_container_opt: Option<(Entity, String)> = None;
-            {
-                let storages = game.world.read_storage::<components::Storage>();
-                for room_item in room_items {
-                    if let Some(desc) = ds.get(room_item) {
-                        if desc.glance.starts_with(container_name.as_str()) {
-                            if storages.get(room_item).is_some() {
-                                target_container_opt = Some((room_item, desc.glance.clone()));
-                                break;
-                            } else {
-                                println!("{} cannot store items", desc.glance.clone());
-                                return RunState::AwaitingInput
-                            }
-                        }
+            for (e, d, s, _) in (
+                &entities,
+                &game.world.read_storage::<components::Description>(),
+                (&game.world.read_storage::<components::Storage>()).maybe(),
+                &get_room_entities_as_bitset(room_id, &game.world),
+            ).join() {
+                if d.glance.starts_with(container_name.as_str()) {
+                    if s.is_some() {
+                        target_container_opt = Some((e, d.glance.clone()));
+                    } else {
+                        println!("{} cannot store items", d.glance.clone());
+                        return RunState::AwaitingInput
                     }
                 }
             }
@@ -283,15 +272,16 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
                 println!("Could not find \"{}\" in the current room", container_name.as_str());
                 return RunState::AwaitingInput
             }
-
             let (container, container_glance) = target_container_opt.unwrap();
-            let container_items = get_entities_from_entity_inventory(&container, &game.world);
+
             let mut target_item_opt: Option<Entity> = None;
-            for container_item in container_items {
-                let desc = ds.get(container_item)
-                    .expect("Expected item in container inventory to have Description component");
-                if desc.glance.starts_with(item_name.as_str()) {
-                    target_item_opt = Some(container_item);
+            for (e, d, _) in (
+                &entities,
+                &game.world.read_storage::<components::Description>(),
+                &(get_entities_in_storage_as_bitset(container, &game.world).unwrap()),
+            ).join() {
+                if d.glance.starts_with(item_name.as_str()) {
+                    target_item_opt = Some(e);
                     break;
                 }
             }
@@ -330,15 +320,15 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             return RunState::AwaitingInput
         }
         Input::PutIn(item_name, container_name) => {
-            let player_items = get_entities_from_entity_inventory(&player, &game.world);
+            let player_items = get_entities_in_storage_as_bitset(player, &game.world)
+                .expect("Expected player to have an inventory!");
             let ds = game.world.read_storage::<components::Description>();
+            let storages = game.world.read_storage::<components::Storage>();
 
             let mut target_item_opt: Option<Entity> = None;
-            for player_item in player_items {
-                let desc = ds.get(player_item)
-                    .expect("Expected item in player inventory to have Description component");
-                if desc.glance.starts_with(item_name.as_str()) {
-                    target_item_opt = Some(player_item);
+            for (e, d, _) in (&entities, &ds, &player_items).join() {;
+                if d.glance.starts_with(item_name.as_str()) {
+                    target_item_opt = Some(e);
                     break;
                 }
             }
@@ -348,20 +338,18 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
                 return RunState::AwaitingInput
             }
 
-            let room_id = get_player_room_id(&player, &game.world);
-            let room_items = get_entities_in_room(room_id, &game.world);
+            let room_id = get_entity_room_id(player, &game.world)
+                .expect("Expected player to be in a room");
+            let room_items = get_room_entities_as_bitset(room_id, &game.world);
             let mut target_container_opt: Option<Entity> = None;
-            let storages = game.world.read_storage::<components::Storage>();
-            for room_item in room_items {
-                if let Some(desc) = ds.get(room_item) {
-                    if desc.glance.starts_with(container_name.as_str()) {
-                        if storages.get(room_item).is_some() {
-                            target_container_opt = Some(room_item);
-                            break;
-                        } else {
-                            println!("{} cannot store items", desc.glance.clone());
-                            return RunState::AwaitingInput
-                        }
+            for (e, d, s, _) in (&entities, &ds, (&storages).maybe(), &room_items).join() {
+                if d.glance.starts_with(container_name.as_str()) {
+                    if s.is_some() {
+                        target_container_opt = Some(e);
+                        break;
+                    } else {
+                        println!("{} cannot store items", d.glance.clone());
+                        return RunState::AwaitingInput
                     }
                 }
             }
@@ -380,15 +368,14 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
             }).expect("Could not insert ApplyInventoryChange");
         }
         Input::Drop(x) => {
-            let inv_items = get_entities_from_entity_inventory(&player, &game.world);
+            let inv_items = get_entities_in_storage_as_bitset(player, &game.world)
+                .expect("Expected player to have an inventory!");
             let ds = game.world.read_storage::<components::Description>();
             let mut target_opt: Option<Entity> = None;
-            for item in inv_items {
-                if let Some(desc) = ds.get(item) {
-                    if desc.glance.starts_with(x.as_str()) {
-                        target_opt = Some(item);
-                        break;
-                    }
+            for (e, d, _) in (&entities, &ds, &inv_items).join() {
+                if d.glance.starts_with(x.as_str()) {
+                    target_opt = Some(e);
+                    break;
                 }
             }
 
@@ -420,35 +407,4 @@ pub fn handle_player_input(game: &mut Game) -> RunState {
     }
 
     RunState::PlayerTurn
-}
-
-
-fn get_player_room_id(player: &Entity, ecs: &World) -> RoomId {
-    let inrooms = ecs.read_storage::<components::InRoom>();
-    let inroom = inrooms.get(*player)
-        .expect("Expected player to be in a room?!");
-
-    inroom.room.clone()
-}
-
-
-fn get_entities_in_room(room_id: RoomId, ecs: &World) -> Vec<Entity> {
-    let inrooms = ecs.read_storage::<components::InRoom>();
-    let mut entities_in_room: Vec<Entity> = Vec::new();
-
-    for (entity, inroom) in (&ecs.entities(), &inrooms).join() {
-        if inroom.room == room_id {
-            entities_in_room.push(entity)
-        }
-    }
-
-    return entities_in_room;
-}
-
-fn get_entities_from_entity_inventory(player: &Entity, ecs: &World) -> Vec<Entity> {
-    let storages = ecs.read_storage::<components::Storage>();
-    let entity_store = storages.get(*player)
-        .expect("Expected Storage component on player!");
-
-    return entity_store.items.clone()
 }
